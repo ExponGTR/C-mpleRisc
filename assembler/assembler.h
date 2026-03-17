@@ -3,14 +3,18 @@
 
 #include <stdint.h>
 
-typedef enum Register {
+typedef enum Register
+{
     r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15
-} Register;
+}
+Register;
 
-typedef enum  Opcode {
+typedef enum Opcode
+{
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_CMP, OP_AND, OP_OR, OP_NOT, OP_MOV,
     OP_LSL, OP_LSR, OP_ASR, OP_NOP, OP_LD,  OP_ST,  OP_BEQ, OP_BGT, OP_B, OP_CALL, OP_RET
-} Opcode;
+}
+Opcode;
 
 // SimpleRisc has three instruction formats:
 
@@ -42,30 +46,64 @@ typedef enum  Opcode {
 
 typedef union Instr
 {
-    struct {
+    struct
+    {
         int offset : 27;
         unsigned int op : 5;
-    } b_type;
+    }
+    b_type;
 
-    struct {
+    struct
+    {
         int16_t imm : 16;
         unsigned int md: 2;
         unsigned int rs1 : 4;
         unsigned int rd : 4;
         unsigned int I : 1;
         unsigned int op : 5;
-    } i_type;
+    }
+    i_type;
     
-    struct {
+    struct
+    {
         unsigned int unused: 14;
         unsigned int rs2 : 4;
         unsigned int rs1 : 4;
         unsigned int rd : 4;
         unsigned int I : 1;
         unsigned int op : 5;
-    } r_type;
+    }
+    r_type;
 
     uint32_t machine_code;
-} Instr;
+}
+Instr;
+
+
+static const int hex_map[256] =
+{
+    ['0'] = 0, ['1'] = 1, ['2'] = 2, ['3'] = 3, ['4'] = 4, ['5'] = 5, ['6'] = 6, ['7'] = 7, ['8'] = 8, ['9'] = 9,
+    ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13, ['e'] = 14, ['f'] = 15,
+    ['A'] = 10, ['B'] = 11, ['C'] = 12, ['D'] = 13, ['E'] = 14, ['F'] = 15
+};
+
+typedef enum TokenType 
+{
+    TK_OP, TK_REG, TK_IMM, TK_COMMA, TK_EOF
+}
+TokenType;
+
+typedef struct Token 
+{
+    TokenType type;
+    union 
+    {
+        Opcode op; // TK_OP
+        Register reg; // TK_REG
+        int16_t imm; // TK_IMM
+    }
+    data;
+}
+Token;
 
 #endif

@@ -80,16 +80,9 @@ typedef union Instr
 Instr;
 
 
-static const int hex_map[256] =
-{
-    ['0'] = 0, ['1'] = 1, ['2'] = 2, ['3'] = 3, ['4'] = 4, ['5'] = 5, ['6'] = 6, ['7'] = 7, ['8'] = 8, ['9'] = 9,
-    ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13, ['e'] = 14, ['f'] = 15,
-    ['A'] = 10, ['B'] = 11, ['C'] = 12, ['D'] = 13, ['E'] = 14, ['F'] = 15
-};
-
 typedef enum TokenType 
 {
-    TK_OP, TK_REG, TK_IMM, TK_COMMA, TK_EOF
+    TK_OP, TK_REG, TK_IMM, TK_COMMA, TK_LB, TK_RB, TK_EOF, TK_INVALID
 }
 TokenType;
 
@@ -98,7 +91,12 @@ typedef struct Token
     TokenType type;
     union 
     {
-        Opcode op; // TK_OP
+        struct
+        {
+            Opcode op;
+            uint8_t md;
+        }
+        op_data; // TK_OP
         Register reg; // TK_REG
         int16_t imm; // TK_IMM
     }

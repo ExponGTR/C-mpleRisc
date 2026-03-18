@@ -14,6 +14,46 @@
 
 uint16_t lc; // Location counter
 
+static const int hex_map[256] =
+{
+    ['0'] = 0, ['1'] = 1, ['2'] = 2, ['3'] = 3, ['4'] = 4, ['5'] = 5, ['6'] = 6, ['7'] = 7, ['8'] = 8, ['9'] = 9,
+    ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13, ['e'] = 14, ['f'] = 15,
+    ['A'] = 10, ['B'] = 11, ['C'] = 12, ['D'] = 13, ['E'] = 14, ['F'] = 15
+};
+
+typedef struct OpMap
+{
+    const char *mnemonic;
+    Opcode op;
+    uint8_t md;
+}
+OpMap;
+
+static const OpMap opcode_table[] =
+{
+    {"add",  OP_ADD, 0}, {"addh", OP_ADD, 2}, {"addu", OP_ADD, 1},
+    {"and",  OP_AND, 0}, {"andh", OP_AND, 2}, {"andu", OP_AND, 1},
+    {"asr",  OP_ASR, 0},
+    {"b",    OP_B,   0},
+    {"beq",  OP_BEQ, 0},
+    {"bgt",  OP_BGT, 0},
+    {"call", OP_CALL,0},
+    {"cmp",  OP_CMP, 0}, {"cmph", OP_CMP, 2}, {"cmpu", OP_CMP, 1},
+    {"div",  OP_DIV, 0}, {"divh", OP_DIV, 2}, {"divu", OP_DIV, 1},
+    {"ld",   OP_LD,  0}, 
+    {"lsl",  OP_LSL, 0}, 
+    {"lsr",  OP_LSR, 0},
+    {"mod",  OP_MOD, 0}, {"modh", OP_MOD, 2}, {"modu", OP_MOD, 1},
+    {"mov",  OP_MOV, 0}, {"movh", OP_MOV, 2}, {"movu", OP_MOV, 1},
+    {"mul",  OP_MUL, 0}, {"mulh", OP_MUL, 2}, {"mulu", OP_MUL, 1},
+    {"nop",  OP_NOP, 0},
+    {"not",  OP_NOT, 0}, {"noth", OP_NOT, 2}, {"notu", OP_NOT, 1},
+    {"or",   OP_OR,  0}, {"orh",  OP_OR,  2}, {"oru",  OP_OR,  1},
+    {"ret",  OP_RET, 0},
+    {"st",   OP_ST,  0},
+    {"sub",  OP_SUB, 0}, {"subh", OP_SUB, 2}, {"subu", OP_SUB, 1}
+};
+
 
 Token lex(FILE* ifp); // todo
 
@@ -73,6 +113,7 @@ Token lex(FILE *ifp)
             while ((c = fgetc(ifp)) != '\n' && c != EOF);
             continue;
         }
+        if (c != EOF) ungetc(c, ifp);
         break;
     }
 
@@ -148,6 +189,32 @@ Token lex(FILE *ifp)
         }
 
         // Opcode
-        
+        int l = 0, r = (sizeof(opcode_table) / sizeof(OpMap)) - 1;
+        OpMap *res = NULL;
+
+        // Binary search for instr
+        while (l <= r)
+        {
+            int m = l + (r - l) / 2;
+            int check = strcmp(buffer, opcode_table[m].mnemonic);
+            if (check == 0)
+            {
+                res = &opcode_table[m];
+                break;
+            }
+            else if (check < 0) r = m - 1;
+            else l = m + 1;
+        }
+        if (res != NULL)
+        {
+            t.type = TK_OP;
+            t.data.op_data.op = res->op;
+            t.data.op_data.md = res->md;
+            return t;
+        }
+
+        // No match
+        t.type = TK_INVALID;
+        return t;
     }
 } 

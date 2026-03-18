@@ -107,15 +107,33 @@ Token lex(FILE *ifp)
         // Whitespace
         if (isspace(c)) continue;
 
+        if (c == '[')
+        {
+            t.type = TK_LB;
+            return t;
+        }
+        if (c == ']')
+        {
+            t.type = TK_RB;
+            return t;
+        }
+
         // Comments
         if (c == ';')
         {
             while ((c = fgetc(ifp)) != '\n' && c != EOF);
             continue;
         }
-        if (c != EOF) ungetc(c, ifp);
         break;
     }
+
+    // EOF
+    if (c == EOF)
+    {
+        t.type = TK_EOF;
+        return;
+    }
+
 
     // Comma
     if (c == ',')
@@ -165,12 +183,13 @@ Token lex(FILE *ifp)
 
     if (isalpha(c))
     {
-        int buffer[50];
+        char buffer[50];
         for (int i = 0; i < 50; i++)
         {
             if (!isalnum(c) || i == 49)
             {
                 buffer[i] = '\0';
+                if (c != EOF) ungetc(c, ifp);
                 break;
             }
             buffer[i] = c;

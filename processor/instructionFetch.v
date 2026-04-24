@@ -3,14 +3,14 @@ module instructionFetch (
     input clk,
     input rst,
     input isBranchTaken,
-    input [31:0] branchPC,
+    input [31:0] branchTarget,
     output reg [31:0] pc
 );
     //using active-low reset and falling edge clock
     wire [31:0] newPC;
-    mux2to1 pcMux(
+    mux2to1_32 pcMux(
         .s0(isBranchTaken),
-        .d1(branchPC),
+        .d1(branchTarget),
         .d0(pc + 32'd4),
         .out(newPC)
     );

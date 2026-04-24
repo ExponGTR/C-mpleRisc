@@ -1,8 +1,8 @@
 module mux2to1 (
-    input [31:0] d0,
-    input [31:0] d1,
-    input s0,
-    output [31:0] out
-); 
+    input d0;
+    input d1;
+    input s0;
+    output out
+);
     assign out = s0 ? d1 : d0;
 endmodule

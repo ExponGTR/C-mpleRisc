@@ -1,4 +1,4 @@
-module tb_InstructionFetch();
+module tb_instructionFetch();
 
     reg clk;
     reg rst;
@@ -6,7 +6,7 @@ module tb_InstructionFetch();
     reg [31:0] branchPC;
     wire [31:0] pc;
 
-    InstructionFetch uut (
+    instructionFetch uut (
         .clk(clk),
         .rst(rst),
         .isBranchTaken(isBranchTaken),

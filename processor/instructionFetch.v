@@ -1,5 +1,5 @@
 
-module InstructionFetch (
+module instructionFetch (
     input clk,
     input rst,
     input isBranchTaken,

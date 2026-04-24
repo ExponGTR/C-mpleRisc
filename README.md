@@ -1,2 +1,3 @@
 # C-mpleRisc
-An implementation of the SimpleRisc ISA in C.
+An implementation of an SimpleRisc ISA assembler in C.
+Processor designed in Verilog.

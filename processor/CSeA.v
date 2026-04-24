@@ -3,22 +3,22 @@ module CSeA (
     input b,
     input c_in,
     output sum,
-    output c_out;
+    output c_out
 );
     wire s1, s2, c1, c2
     fullAdder fa1 (
         .a(a),
         .b(b),
-        .c_in(1'b0);
+        .c_in(1'b0),
         .sum(s1),
         .c_out(c1),
     );
     fullAdder fa2 (
         .a(a),
         .b(b),
-        .c_in(1'b1);
+        .c_in(1'b1),
         .sum(s2),
-        .c_out(c2),
+        .c_out(c2)
     );
 
     //sum selector

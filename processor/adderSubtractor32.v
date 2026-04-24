@@ -16,7 +16,7 @@ module adderSubtractor32 (
             xor(b_o[i], b[i], contl);
             CSeA carrySelectAdder (
                 .a(a[i]),
-                .b(b[i]),
+                .b(b_o[i]),
                 .c_in(c[i]),
                 .sum(res[i]),
                 .c_out(c[i + 1])

@@ -2,14 +2,11 @@ module ALU (
     input [31:0] op1,
     input [31:0] op2,
     input [31:0] immx,
-    input [2:0] aluSignals,
+    input [3:0] aluSignals,
     output reg [31:0] aluResult,
     output reg isEqual,
     output reg isGreater
 );
-
-    
-
     always @(*) begin
         case (aluSignals)
             4'b0000: adderSubtractor32 adder (

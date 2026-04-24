@@ -8,5 +8,5 @@ module InstructionMemory (
     end
 
     //since instr size is 4 bytes, last 2 bits are for byte offset
-    assign instr = memory[pc[31:2]]
+    assign instr = memory[pc[31:2]];
 endmodule

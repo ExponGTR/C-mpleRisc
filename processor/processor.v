@@ -19,7 +19,7 @@ module Processor (
     );
 
     InstructionMemory instrMem (
-        .pc(currentPC),
+        .pc(pc),
         .instr(instr)
     );
 

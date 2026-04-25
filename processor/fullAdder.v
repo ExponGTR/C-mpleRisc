@@ -5,6 +5,6 @@ module fullAdder (
     output sum,
     output c_out;
 );
-    xor(sum, a, b, c_in);
+    assign sum = a ^ b ^ c_in;
     assign c_out = (a & b) | (c_in & (a ^ b));
 endmodule

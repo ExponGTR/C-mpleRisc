@@ -11,7 +11,7 @@ module processor (
     wire [1:0] modifier;
     wire [15:0] imm;
     wire [26:0] offset;
-    wire [31:0] immx, offsetx;
+    wire [31:0] immx, offsetx; //extended imm and offset
 
     wire [31:0] branchTarget = pc + offsetx;
     //hardcoded branch signals for now until we build the Decode/Execute stages
@@ -21,6 +21,9 @@ module processor (
     wire writeEnable = 1'b0;
     wire [31:0] writeData = 32'b0;
     wire [31:0] readData1, readData2;
+
+    wire [31:0] op2, aluResult, aluInput2;
+    wire isEqual, isGreater;
 
     instructionFetch fetchUnit (
         .clk(clk),
@@ -65,6 +68,23 @@ module processor (
         .rd(rd),
         .rs1(rs1),
         .rs2(rs2)
+    );
+
+    // selection of op2
+    mux2to1_32 op2sel (
+        .d0(readData2),
+        .d1(immx),
+        .s0(isImmediate),
+        .out(aluInput2)
+    );
+
+    ALU alu (
+        .op1(readData1),
+        .op2(aluInput2),
+        .aluResult(aluResult),
+        .aluSignals(opcode[3:0]), //will fix after cu is built
+        .isEqual(isEqual),
+        .isGreater(isGreater)
     );
 
 endmodule

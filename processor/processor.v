@@ -21,7 +21,7 @@ module processor (
     wire [3:0] readPort1Addr, readPort2Addr, writePortAddr;
 
     wire [31:0] op2, aluResult;
-    wire [31:0] ldResult = 32'b0; //temporary, will fix later
+    wire [31:0] ldResult;
     wire isEqual, isGreater;
     wire [3:0] aluSignals;
 
@@ -76,6 +76,16 @@ module processor (
         .aluResult(aluResult),
         .branchPC(branchPC),
         .isBranchTaken(isBranchTaken)
+    );
+
+    dataMem memoryUnit (
+        .clk(clk),
+        .rst(rst),
+        .isSt(isSt),
+        .isLd(isLd),
+        .addr(aluResult),
+        .writeData(readPort2Data),
+        .readData(ldResult)
     );
 
     registerWritebackUnit regWriteUnit (

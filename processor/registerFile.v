@@ -22,4 +22,14 @@ module registerFile (
             registers[writePortAddr] <= writePortData;
         end
     end
+    task dumpReg;
+        integer i;
+        begin
+            for (i = 0; i < 16; i = i + 1) begin
+                if (registers[i] !== 32'b0) begin
+                    $display(" R%0d \t= %0d \t(Hex: 0x%08h)", i, $signed(registers[i]), registers[i]);
+                end
+            end
+        end
+    endtask
 endmodule

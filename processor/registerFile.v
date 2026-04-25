@@ -6,8 +6,8 @@ module registerFile (
     input [3:0] readPort1Addr,
     input [3:0] readPort2Addr,
     input [31:0] writePortData,
-    output [31:0] readPort1,
-    output [31:0] readPort2
+    output [31:0] readPort1Data,
+    output [31:0] readPort2Data
 );
     reg [31:0] registers [0:15];
     assign readPort1Data = registers[readPort1Addr];

@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
                     }
                 }
                 instr.b_type.op = op;
-                instr.b_type.offset = target_addr - lc; // byte offset
+                instr.b_type.offset = ((target_addr - lc) >> 2); // byte offset
             }
 
             // ret, nop

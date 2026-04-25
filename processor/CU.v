@@ -21,10 +21,6 @@ module CU (
     always @(*) begin
         writeEnable = 1'b0;
         flagsWriteEnable = 1'b0;
-        isBeq = 1'b0;
-        isBgt = 1'b0;
-        isUBranch = 1'b0;
-        isRet = 1'b0;
         aluSignals = 4'b0000;
         //writeEnable for ld and ALU instr except cmp
         if ((opcode >= `ADD && opcode <= `ASR && opcode != `CMP) || opcode == `LD) begin
@@ -45,7 +41,12 @@ module CU (
             `BGT: isBgt = 1'b1;
             `B: isUBranch = 1'b1;
             `RET: {isUBranch, isRet} = 2'b11;
-            default: 
+            default: begin
+                isBeq = 1'b0;
+                isBgt = 1'b0;
+                isUBranch = 1'b0;
+                isRet = 1'b0;
+            end
         endcase
     end
     

@@ -2,6 +2,7 @@ module tb_processor();
 
     reg clk;
     reg rst;
+    integer cycle;
 
     // Instantiate the Top-Level Processor
     processor uut (
@@ -9,24 +10,37 @@ module tb_processor();
         .rst(rst)
     );
 
-    //clock gen
+    // Clock generation
     always #5 clk = ~clk;
 
-    //stimulus
+    // Stimulus and Simulation Control
     initial begin
+        $display("Starting SimpleRisc Processor Simulation...");
+        
         clk = 0;
         rst = 0;
+        cycle = 0;
+        #15 rst = 1; 
+        #200;
         
-        #20 rst = 1;
-        #100 $finish;
+        $display("FINAL REGISTER FILE STATE             ");
+        for (integer i = 0; i < 16; i = i + 1) begin
+            if (uut.regFile.registers[i] !== 32'b0) begin
+                $display(" R%0d \t= %0d \t(Hex: 0x%08h)", i, $signed(uut.regFile.registers[i]), uut.regFile.registers[i]);
+            end
+        end     
+        
+        $finish;
     end
     
-    initial begin
-        $monitor(
-            "Time: %0t, rst: %b, PC: %h, Instruction: %h, Opcode: %b, rd: %d, rs1: %d, rs2: %d, md: %b, immx: %h, offset: %h, R1: %h, R2: %h, ALU Output: %h", 
-            $time, rst, uut.pc, uut.instr, uut.opcode, uut.rd, uut.rs1, uut.rs2, uut.modifier, uut.immx,
-            uut.offset, uut.readData1, uut.readData2, uut.aluResult
-        );
+    always @(negedge clk) begin
+        if (rst) begin
+            // Wait 1 time unit to let the negative-edge non-blocking assignments (<=) settle
+            #1; 
+            cycle = cycle + 1;
+            $display("Cycle: %3d, PC: 0x%08h, Instr: 0x%08h, Opcode: %b, rs1: %d, rs2: %d, rd: %d | ALU Out: 0x%08h | WE: %b | Branch: %b", 
+                cycle, uut.pc, uut.instr, uut.opcode, uut.rs1, uut.rs2, uut.rd, uut.aluResult, uut.writeEnable, uut.isBranchTaken);
+        end
     end
 
 endmodule

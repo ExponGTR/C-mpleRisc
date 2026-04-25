@@ -14,22 +14,23 @@ module processor (
     wire [31:0] immx, offsetx; //extended imm and offset
 
     wire [31:0] branchTarget = pc + offsetx;
-    //hardcoded branch signals for now until we build the Decode/Execute stages
-    wire isBranchTaken = 1'b0;
-
-    //hardcoded for now till cu and alu are made
-    wire writeEnable = 1'b0;
-    wire [31:0] writeData = 32'b0;
+    wire isBeq, isBgt, isUBranch, isRet, isBranchTaken;
+    wire eq, gt;
+    wire [31:0] branchPC;
+    
+    wire writeEnable, flagsWriteEnable;
+    wire [31:0] writeData = aluResult; //temporary, will fix later
     wire [31:0] readData1, readData2;
 
     wire [31:0] op2, aluResult, aluInput2;
     wire isEqual, isGreater;
+    wire [3:0] aluSignals;
 
     instructionFetch fetchUnit (
         .clk(clk),
         .rst(rst),
         .isBranchTaken(isBranchTaken),
-        .branchTarget(branchTarget),
+        .branchTarget(branchPC),
         .pc(pc)
     );
 
@@ -82,9 +83,42 @@ module processor (
         .op1(readData1),
         .op2(aluInput2),
         .aluResult(aluResult),
-        .aluSignals(opcode[3:0]), //will fix after cu is built
+        .aluSignals(aluSignals), //will fix after cu is built
         .isEqual(isEqual),
         .isGreater(isGreater)
     );
 
+    CU cu (
+        .opcode(opcode),
+        .writeEnable(writeEnable),
+        .flagsWriteEnable(flagsWriteEnable),
+        .isBeq(isBeq),
+        .isBgt(isBgt),
+        .isUBranch(isUBranch),
+        .isRet(isRet),
+        .aluSignals(aluSignals)
+    );
+
+    flagsRegister flagReg (
+        .clk(clk),
+        .rst(rst),
+        .flagsWriteEnable(flagsWriteEnable),
+        .isEqual(isEqual),
+        .isGreater(isGreater),
+        .eq(eq),
+        .gt(gt)
+    );
+
+    branchUnit bUnit (
+.isBeq(isBeq),
+        .isBgt(isBgt),
+        .isUBranch(isUBranch),
+        .isRet(isRet),
+        .eq(eq),
+        .gt(gt),
+        .branchTarget(branchTarget),
+        .op1(readData1), //case of ret
+        .isBranchTaken(isBranchTaken),
+        .branchPC(branchPC)
+    );
 endmodule

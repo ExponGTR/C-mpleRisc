@@ -11,7 +11,7 @@ module immediateUnit (
             2'b00: immx = {{16{imm[15]}}, imm}; // sign extension
             2'b01: immx = {16'b0, imm}; // unsigned
             2'b10: immx = {imm, 16'b0}; // higher half-word
-            default: ;
+            default: immx = 32'b0;
         endcase
     end
     //extended offset

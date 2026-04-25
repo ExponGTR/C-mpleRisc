@@ -9,13 +9,15 @@ module ALU (
 );
     wire isSub = (aluSignals == 4'b0001 || aluSignals == 4'b0101); //sub, cmp
     wire [31:0] addSubRes;
-    adderSubtractor addSub (
+    adderSubtractor32  addSub (
         .a(op1),
         .b(op2),
         .contl(isSub),
         .res(addSubRes)
-    )
+    );
     always @(*) begin
+        isEqual = (op1 == op2);
+        isGreater = ($signed(op1) > $signed(op2));
         case (aluSignals)
             4'b0000: //add
                 aluResult = addSubRes;

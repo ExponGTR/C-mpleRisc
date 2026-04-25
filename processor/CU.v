@@ -2,18 +2,22 @@
 `define CMP 5'b00101
 `define ASR 5'b01100
 `define LD 5'b01110
+`define ST 5'b01111
 `define BEQ 5'b10000
 `define BGT 5'b10001
 `define B 5'b10010
+`define CALL 5'b10011
 `define RET 5'b10100
 
 module CU (
     input [4:0] opcode,
     output reg writeEnable,
     output reg flagsWriteEnable,
+    output reg isSt,
     output reg isBeq,
     output reg isBgt,
     output reg isUBranch,
+    output reg isCall,
     output reg isRet,
     output reg [3:0] aluSignals
 );
@@ -37,14 +41,18 @@ module CU (
 
         //branching logic
         case (opcode)
+            `ST: isSt = 1'b1;
             `BEQ: isBeq = 1'b1;
             `BGT: isBgt = 1'b1;
             `B: isUBranch = 1'b1;
+            `CALL: isCall = 1'b1;
             `RET: {isUBranch, isRet} = 2'b11;
             default: begin
+                isSt = 1'b0;
                 isBeq = 1'b0;
                 isBgt = 1'b0;
                 isUBranch = 1'b0;
+                isCall = 1'b0;
                 isRet = 1'b0;
             end
         endcase

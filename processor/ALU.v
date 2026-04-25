@@ -9,7 +9,7 @@ module ALU (
 );
     wire isSub = (aluSignals == 4'b0001 || aluSignals == 4'b0101); //sub, cmp
     wire [31:0] addSubRes;
-    adderSubtractor32  addSub (
+    adderSubtractor32 addSub (
         .a(op1),
         .b(op2),
         .contl(isSub),

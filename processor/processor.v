@@ -14,19 +14,20 @@ module processor (
     wire [31:0] immx, offsetx; //extended imm and offset
 
     wire [31:0] branchTarget = pc + offsetx;
-    wire isBeq, isBgt, isUBranch, isRet, isBranchTaken;
+    wire isBeq, isBgt, isUBranch, isCall, isRet, isBranchTaken;
     wire eq, gt;
     wire [31:0] branchPC;
     
     wire writeEnable, flagsWriteEnable;
-    wire [31:0] writeData = aluResult; //temporary, will fix later
-    wire [31:0] readData1, readData2;
+    wire [31:0] writePortData = aluResult; //temporary, will fix later
+    wire [31:0] readPort1Data, readPort2Data;
+    wire [3:0] readPort1Addr, readPort2Addr, writePortAddr;
 
     wire [31:0] op2, aluResult, aluInput2;
     wire isEqual, isGreater;
     wire [3:0] aluSignals;
 
-    instructionFetch fetchUnit (
+    instructionFetchUnit fetchUnit (
         .clk(clk),
         .rst(rst),
         .isBranchTaken(isBranchTaken),
@@ -59,16 +60,39 @@ module processor (
         .offsetx(offsetx)
     );
 
+    //readPort1Addr/readPort2Addr/writePortAddr will change according to instr
+    //if ret, r15 (ra) goes to readPort1
+    mux2to1_4 readport1sel (
+        .d0(rs1),
+        .d1(4'b1111), //ra
+        .s0(isRet),
+        .out(readPort1Addr)
+    );
+    //if st, rd goes to readPort2
+    mux2to1_4 readport2sel (
+        .d0(rs2),
+        .d1(rd),
+        .s0(isSt),
+        .out(readPort1Addr)
+    );
+    //if call, r15 (ra) goes to writePort
+    mux2to1_4 writeportsel (
+        .d0(rd),
+        .d1(4'b1111), //ra
+        .s0(isCall),
+        .out(writePortAddr)
+    );
+
     registerFile regFile (
         .clk(clk),
         .rst(rst),
         .writeEnable(writeEnable),
-        .writeData(writeData),
-        .readData1(readData1),
-        .readData2(readData2),
-        .rd(rd),
-        .rs1(rs1),
-        .rs2(rs2)
+        .writePortData(writePortData),
+        .readPort1Data(readPort1Data),
+        .readPort2Data(readPort2Data),
+        .writePortAddr(writePortAddr),
+        .readPort1Addr(readPort1Addr),
+        .readPort2Addr(readPort2Addr)
     );
 
     // selection of op2
@@ -83,7 +107,7 @@ module processor (
         .op1(readData1),
         .op2(aluInput2),
         .aluResult(aluResult),
-        .aluSignals(aluSignals), //will fix after cu is built
+        .aluSignals(aluSignals),
         .isEqual(isEqual),
         .isGreater(isGreater)
     );
@@ -110,7 +134,7 @@ module processor (
     );
 
     branchUnit bUnit (
-.isBeq(isBeq),
+        .isBeq(isBeq),
         .isBgt(isBgt),
         .isUBranch(isUBranch),
         .isRet(isRet),

@@ -23,9 +23,9 @@ module dataMem (
     end
 
     mux2to1_32 readsel (
-        .d0(mem[addr[12:2]]);
-        .d1(32'bz);
-        .s0(isLd);
+        .d0(32'bz),
+        .d1(mem[addr[12:2]]),
+        .s0(isLd),
         .out(readData)
     );
 endmodule

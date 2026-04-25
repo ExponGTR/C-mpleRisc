@@ -35,7 +35,7 @@ module CU (
         isCall = 1'b0;
         isRet = 1'b0;
         //writeEnable for ld and ALU instr except cmp
-        if ((opcode >= `ADD && opcode <= `ASR && opcode != `CMP) || opcode == `LD) begin
+        if ((opcode >= `ADD && opcode <= `ASR && opcode != `CMP) || opcode == `LD || opcode == `CALL) begin
             writeEnable = 1'b1;
         end
         //write to flags when cmp

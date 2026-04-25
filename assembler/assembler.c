@@ -11,6 +11,20 @@
 #include <ctype.h>
 #include "assembler.h"
 
+#define MAX_TOKENS 2000
+#define MAX_SYMBOLS 100
+
+Token tokens[MAX_TOKENS];
+int token_count = 0;
+
+typedef struct Symbol
+{
+    char name[50];
+    uint16_t address;
+} Symbol;
+
+Symbol symbol_table[MAX_SYMBOLS];
+int symbol_count = 0;
 
 uint16_t lc; // Location counter
 
@@ -55,7 +69,7 @@ static const OpMap opcode_table[] =
 };
 
 
-Token lex(FILE* ifp); // todo
+Token lex(FILE* ifp);
 
 
 int main(int argc, char *argv[])
@@ -67,7 +81,8 @@ int main(int argc, char *argv[])
         printf("Usage: ./a.out <src> <dst>\n");
         exit(0);
     }
-    strcpy(src, argv[1]); strcpy(dst, argv[2]);
+    strcpy(src, argv[1]);
+    strcpy(dst, argv[2]);
     if ((ifp = fopen(src, "r")) == NULL)
     {
         printf("File does not exist.\n");
@@ -81,20 +96,190 @@ int main(int argc, char *argv[])
 
     // Initialisation
     lc = 0;
+    token_count = 0;
+    symbol_count = 0;
 
+    Token t;
+    while (1)
+    {
+        t = lex(ifp);
+        if (t.type == TK_EOF) break;
+        
+        if (t.type == TK_INVALID)
+        {
+            printf("Error: Unrecognized symbol encountered by the Lexer.\n");
+            exit(1);
+        }
+        
+        tokens[token_count++] = t;
+    }
+    fclose(ifp);
 
-    // Use a lexer to read the .asm file
-    // Tag tokens to be parsed and store
-    // Remove whitespaces and comments
-    lex(ifp);
+    // first pass
+    for (int i = 0; i < token_count; i++)
+    {
+        if (tokens[i].type == TK_LABEL_DECL)
+        {
+            // record the label and the current address inline
+            strcpy(symbol_table[symbol_count].name, tokens[i].data.label);
+            symbol_table[symbol_count].address = lc;
+            symbol_count++;
+        }
+        else if (tokens[i].type == TK_OP) lc += 4;
+    }
 
+    printf("\tSymbol Table\n");
+    for (int i = 0; i < symbol_count; i++) {
+        printf("Label: %s \t Address: %d\n", symbol_table[i].name, symbol_table[i].address);
+    }
 
-    // Parse the tokens
+    if ((ofp = fopen(dst, "w")) == NULL)
+    {
+        printf("Error opening output file.\n");
+        exit(1);
+    }
 
+    // second pass
+    lc = 0;
+    int current_token = 0;
+    while (current_token < token_count)
+    {
+        Token t = tokens[current_token];
 
-    // Write the machine code to a file and also print it on the terminal
+        if (t.type == TK_OP)
+        {
+            Instr instr;
+            instr.machine_code = 0; // Zero out the bits to be safe
+            
+            Opcode op = t.data.op_data.op;
+            uint8_t md = t.data.op_data.md;
+            
+            // 3-Operand ALU instructions
+            if (op == OP_ADD || op == OP_SUB || op == OP_MUL || op == OP_DIV || 
+                op == OP_MOD || op == OP_AND || op == OP_OR  || op == OP_LSL || 
+                op == OP_LSR || op == OP_ASR)
+            {
+                //Syntax: op rd, rs1, rs2/imm
+                
+                current_token++; // move to rd
+                int rd = tokens[current_token].data.reg;
+                current_token += 2; // skip rd TK_COMMA and move to rs1
+                int rs1 = tokens[current_token].data.reg;
+                current_token += 2; // skip rs1 and TK_COMMA and move to last operand
+                
+                // check r-type or i-type
+                if (tokens[current_token].type == TK_REG)
+                {
+                    int rs2 = tokens[current_token].data.reg;
+                    instr.r_type.op = op;
+                    instr.r_type.I = 0;
+                    instr.r_type.rd = rd;
+                    instr.r_type.rs1 = rs1;
+                    instr.r_type.rs2 = rs2;
+                    instr.r_type.unused = 0;
+                }
+                else if (tokens[current_token].type == TK_IMM)
+                {
+                    int16_t imm = tokens[current_token].data.imm;
+                    instr.i_type.op = op;
+                    instr.i_type.I = 1;
+                    instr.i_type.rd = rd;
+                    instr.i_type.rs1 = rs1;
+                    instr.i_type.md = md;
+                    instr.i_type.imm = imm;
+                }
+            }
 
+            // 2-Operand instructions (cmp, mov, not)
+            else if (op == OP_MOV || op == OP_NOT || op == OP_CMP)
+            {
+                int r_first = tokens[++current_token].data.reg;
+                current_token += 2; // skip comma
+                
+                if (op == OP_CMP)
+                {
+                    if (tokens[current_token].type == TK_REG)
+                    {
+                        instr.r_type.op = op;
+                        instr.r_type.I = 0;
+                        instr.r_type.rs1 = r_first;
+                        instr.r_type.rs2 = tokens[current_token].data.reg;
+                    }
+                    else
+                    {
+                        instr.i_type.op = op;
+                        instr.i_type.I = 1;
+                        instr.i_type.rs1 = r_first;
+                        instr.i_type.md = md;
+                        instr.i_type.imm = tokens[current_token].data.imm;
+                    }
+                }
+                else
+                {
+                    // mov/not rd, rs/imm
+                    instr.i_type.op = op;
+                    instr.i_type.rd = r_first;
+                    if (tokens[current_token].type == TK_REG)
+                    {
+                        instr.r_type.I = 0; 
+                        if (op == OP_MOV) instr.r_type.rs2 = tokens[current_token].data.reg;
+                        else instr.r_type.rs1 = tokens[current_token].data.reg;
+                    }
+                    else
+                    {
+                        instr.i_type.I = 1;
+                        instr.i_type.md = md;
+                        instr.i_type.imm = tokens[current_token].data.imm;
+                    }
+                }
+            }
+            
+            // Memory instructions (ld, st)
+            else if (op == OP_LD || op == OP_ST)
+            {
+                int rd = tokens[++current_token].data.reg;
+                current_token += 2; // skip comma
+                int16_t imm = tokens[current_token].data.imm;
+                current_token += 2; // skip [
+                int rs1 = tokens[current_token].data.reg;
+                current_token++; // skip ]
+                
+                instr.i_type.op = op; instr.i_type.I = 1;
+                instr.i_type.rd = rd; instr.i_type.rs1 = rs1; instr.i_type.imm = imm;
+            }
 
+            // Branch instructions (b, beq, call)
+            else if (op >= OP_BEQ && op <= OP_CALL)
+            {
+                char* target = tokens[++current_token].data.label;
+                int target_addr = -1;
+                for (int i = 0; i < symbol_count; i++) {
+                    if (strcmp(symbol_table[i].name, target) == 0) {
+                        target_addr = symbol_table[i].address;
+                        break;
+                    }
+                }
+                instr.b_type.op = op;
+                instr.b_type.offset = target_addr - lc; // byte offset
+            }
+
+            // ret, nop
+            else if (op == OP_RET || op == OP_NOP)
+            {
+                instr.b_type.op = op;
+                instr.b_type.offset = 0;
+            }
+
+            fprintf(ofp, "%08X\n", instr.machine_code);
+            printf("%08X\n", instr.machine_code);
+            
+            lc += 4;
+        }
+        
+        current_token++;
+    }
+
+    fclose(ofp);
     return 0;
 }
 
@@ -127,13 +312,11 @@ Token lex(FILE *ifp)
         break;
     }
 
-    // EOF
     if (c == EOF)
     {
         t.type = TK_EOF;
-        return;
+        return t;
     }
-
 
     // Comma
     if (c == ',')
@@ -181,22 +364,31 @@ Token lex(FILE *ifp)
         return t;
     }
 
-    if (isalpha(c))
+    // words
+    if (isalpha(c) || c == '.')
     {
         char buffer[50];
-        for (int i = 0; i < 50; i++)
+        int i = 0;
+        
+        // read until whitespace or an invalid char
+        while (i < 49 && (isalnum(c) || c == '.' || c == '_' || c == ':'))
         {
-            if (!isalnum(c) || i == 49)
-            {
-                buffer[i] = '\0';
-                if (c != EOF) ungetc(c, ifp);
-                break;
-            }
-            buffer[i] = c;
+            buffer[i++] = c;
             c = fgetc(ifp);
         }
+        buffer[i] = '\0';
+        if (c != EOF) ungetc(c, ifp);
 
-        // Register
+        // label
+        if (buffer[i - 1] == ':')
+        {
+            buffer[i - 1] = '\0'; // stripping the colon
+            t.type = TK_LABEL_DECL;
+            strcpy(t.data.label, buffer);
+            return t;
+        }
+
+        // register
         if (buffer[0] == 'r' && isdigit(buffer[1]))
         {
             int val = buffer[1] - '0';
@@ -207,23 +399,23 @@ Token lex(FILE *ifp)
             return t;
         }
 
-        // Opcode
+        // opcode
         int l = 0, r = (sizeof(opcode_table) / sizeof(OpMap)) - 1;
         OpMap *res = NULL;
 
-        // Binary search for instr
         while (l <= r)
         {
             int m = l + (r - l) / 2;
             int check = strcmp(buffer, opcode_table[m].mnemonic);
             if (check == 0)
             {
-                res = &opcode_table[m];
+                res = (OpMap*)&opcode_table[m];
                 break;
             }
             else if (check < 0) r = m - 1;
             else l = m + 1;
         }
+        
         if (res != NULL)
         {
             t.type = TK_OP;
@@ -232,8 +424,13 @@ Token lex(FILE *ifp)
             return t;
         }
 
-        // No match
-        t.type = TK_INVALID;
+        // if not a register or opcode, it must be a label
+        t.type = TK_LABEL;
+        strcpy(t.data.label, buffer);
         return t;
     }
-} 
+    
+    // Unrecognized symbol
+    t.type = TK_INVALID;
+    return t;
+}

@@ -55,7 +55,7 @@ typedef union Instr
 
     struct
     {
-        int16_t imm : 16;
+        unsigned int imm : 16;
         unsigned int md: 2;
         unsigned int rs1 : 4;
         unsigned int rd : 4;
@@ -82,7 +82,7 @@ Instr;
 
 typedef enum TokenType 
 {
-    TK_OP, TK_REG, TK_IMM, TK_COMMA, TK_LB, TK_RB, TK_EOF, TK_INVALID
+    TK_OP, TK_REG, TK_IMM, TK_COMMA, TK_LB, TK_RB, TK_LABEL, TK_LABEL_DECL, TK_EOF, TK_INVALID
 }
 TokenType;
 
@@ -99,6 +99,7 @@ typedef struct Token
         op_data; // TK_OP
         Register reg; // TK_REG
         int16_t imm; // TK_IMM
+        char label[50]; //TK_LABEL
     }
     data;
 }

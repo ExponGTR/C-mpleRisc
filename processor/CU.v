@@ -13,6 +13,7 @@ module CU (
     input [4:0] opcode,
     output reg writeEnable,
     output reg flagsWriteEnable,
+    output reg isLd,
     output reg isSt,
     output reg isBeq,
     output reg isBgt,
@@ -26,6 +27,13 @@ module CU (
         writeEnable = 1'b0;
         flagsWriteEnable = 1'b0;
         aluSignals = 4'b0000;
+        isLd = 1'b0;
+        isSt = 1'b0;
+        isBeq = 1'b0;
+        isBgt = 1'b0;
+        isUBranch = 1'b0;
+        isCall = 1'b0;
+        isRet = 1'b0;
         //writeEnable for ld and ALU instr except cmp
         if ((opcode >= `ADD && opcode <= `ASR && opcode != `CMP) || opcode == `LD) begin
             writeEnable = 1'b1;
@@ -41,20 +49,14 @@ module CU (
 
         //branching logic
         case (opcode)
+            `LD: isLd = 1'b1;
             `ST: isSt = 1'b1;
             `BEQ: isBeq = 1'b1;
             `BGT: isBgt = 1'b1;
             `B: isUBranch = 1'b1;
-            `CALL: isCall = 1'b1;
+            `CALL: {isUBranch, isCall} = 2'b11;
             `RET: {isUBranch, isRet} = 2'b11;
-            default: begin
-                isSt = 1'b0;
-                isBeq = 1'b0;
-                isBgt = 1'b0;
-                isUBranch = 1'b0;
-                isCall = 1'b0;
-                isRet = 1'b0;
-            end
+            default: ;
         endcase
     end
     
